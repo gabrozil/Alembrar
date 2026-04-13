@@ -1,6 +1,6 @@
 {
-  "versionCode": 3,
-  "versionName": "1.2",
+  "versionCode": 4,
+  "versionName": "1.3",
   "downloadUrl": "https://github.com/gabrozil/Alembrar/releases/latest/download/app-release.apk",
-  "releaseNotes": "Alembrar v1.2: Notificação Fixa adicionada! Abra o app rapidamente com o botão Abrir ou oculte a notificação com o botão Ignorar."
+  "releaseNotes": "Alembrar v1.3 (Simulação): Teste do sistema de atualização automática funcionando perfeitamente!"
 }
