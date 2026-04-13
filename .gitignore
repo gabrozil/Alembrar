@@ -1,0 +1,23 @@
+# Android
+build/
+.gradle/
+local.properties
+*.iml
+.idea/
+.DS_Store
+*.apk
+*.aar
+*.jks
+
+# Kotlin-specific
+.kotlin/
+capture/
+scripts/
+
+# KSP generated files
+**/*_ksp.kt
+**/build/generated/ksp/
+
+# OS specific
+Thumbs.db
+Desktop.ini
