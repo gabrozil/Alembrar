@@ -1,6 +1,6 @@
 {
   "versionCode": 4,
   "versionName": "1.3",
-  "downloadUrl": "https://github.com/gabrozil/Alembrar/releases/latest/download/app-release.apk",
-  "releaseNotes": "Alembrar v1.3 (Simulação): Teste do sistema de atualização automática funcionando perfeitamente!"
+  "downloadUrl": "https://github.com/gabrozil/Alembrar/releases/download/v1.3/app-release.apk",
+  "releaseNotes": "Alembrar v1.3: Sistema de atualizações automáticas + Notificação Fixa melhorada!"
 }
