@@ -3,9 +3,9 @@ package com.clipboardreminder.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.clipboardreminder.domain.model.FieldUi
 import com.clipboardreminder.domain.model.Reminder
 import com.clipboardreminder.domain.model.ReminderUi
+import com.clipboardreminder.domain.model.SortOrder
 import com.clipboardreminder.domain.repository.ReminderRepository
 import com.clipboardreminder.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +22,10 @@ data class ReminderListUiState(
     val copySuccessId: Long? = null,
     val showDeleteConfirmation: Boolean = false,
     val reminderToDelete: ReminderUi? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val sortOrder: SortOrder = SortOrder.ALPHABETICAL,
+    val filterColor: Int? = null,
+    val showSortSheet: Boolean = false
 )
 
 @HiltViewModel
@@ -48,6 +51,9 @@ class ReminderListViewModel @Inject constructor(
     val uiState: StateFlow<ReminderListUiState> = _uiState.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
+    // If it's the "most used" screen, default sort is MOST_USED. Otherwise ALPHABETICAL.
+    private val _sortOrder = MutableStateFlow(if (isMostUsed) SortOrder.MOST_USED else SortOrder.ALPHABETICAL)
+    private val _filterColor = MutableStateFlow<Int?>(null)
 
     init {
         val remindersFlow = if (isMostUsed) {
@@ -55,23 +61,41 @@ class ReminderListViewModel @Inject constructor(
         } else {
             reminderRepository.getRemindersForField(fieldId).map { reminders ->
                 reminders.map { r ->
-                    ReminderUi(r.id, r.fieldId, r.title, r.content, r.usageCount, r.notificationEnabled, r.notificationIntervalMinutes)
+                    ReminderUi(
+                        id = r.id, fieldId = r.fieldId, title = r.title, content = r.content,
+                        usageCount = r.usageCount, notificationEnabled = r.notificationEnabled,
+                        notificationIntervalMinutes = r.notificationIntervalMinutes,
+                        color = r.color, updatedAt = r.updatedAt,
+                        isPinned = r.isPinned
+                    )
                 }
             }
         }
 
         combine(
             remindersFlow,
-            _searchQuery
-        ) { reminders, query ->
-            if (query.isBlank()) {
-                reminders
-            } else {
-                reminders.filter { 
-                    it.title.contains(query, ignoreCase = true) || 
-                    it.content.contains(query, ignoreCase = true) 
-                }
+            _searchQuery,
+            _sortOrder,
+            _filterColor
+        ) { reminders, query, sort, colorFilter ->
+            var filtered = if (query.isBlank()) reminders
+                           else reminders.filter { it.title.contains(query, ignoreCase = true) || it.content.contains(query, ignoreCase = true) }
+
+            filtered = when (colorFilter) {
+                null -> filtered
+                -1   -> filtered.filter { it.color == null }
+                else -> filtered.filter { it.color == colorFilter }
             }
+
+            filtered = when (sort) {
+                SortOrder.ALPHABETICAL      -> filtered.sortedBy { it.title.lowercase() }
+                SortOrder.ALPHABETICAL_DESC -> filtered.sortedByDescending { it.title.lowercase() }
+                SortOrder.MOST_USED         -> filtered.sortedByDescending { it.usageCount }
+                SortOrder.LAST_MODIFIED     -> filtered.sortedByDescending { it.updatedAt }
+                else                        -> filtered.sortedBy { it.title.lowercase() }
+            }
+
+            filtered
         }.onEach { filteredReminders ->
             _uiState.update { it.copy(reminders = filteredReminders, isLoading = false) }
         }.launchIn(viewModelScope)
@@ -82,9 +106,28 @@ class ReminderListViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun createReminder(title: String, content: String) {
+    fun setSortOrder(sort: SortOrder) {
+        _sortOrder.value = sort
+        _uiState.update { it.copy(sortOrder = sort, showSortSheet = false) }
+    }
+
+    fun setFilterColor(color: Int?) {
+        _filterColor.value = color
+        _uiState.update { it.copy(filterColor = color) }
+    }
+
+    fun showSortSheet() = _uiState.update { it.copy(showSortSheet = true) }
+    fun hideSortSheet() = _uiState.update { it.copy(showSortSheet = false) }
+
+    fun createReminder(title: String, content: String, color: Int? = null) {
+        // Para manter a assinatura existente, vamos atualizar via update (ou alterar UseCase).
+        // A assinatura do CreateReminderUseCase não tem color. Vamos usar update temporariamente ou o banco salva com null.
         viewModelScope.launch {
-            createReminderUseCase(fieldId, title, content).onFailure { e ->
+            createReminderUseCase(fieldId, title, content).onSuccess { createdReminder ->
+                if (color != null) {
+                    updateReminderUseCase(createdReminder.copy(color = color))
+                }
+            }.onFailure { e ->
                 _uiState.update { it.copy(errorMessage = e.message) }
             }
         }
@@ -93,6 +136,27 @@ class ReminderListViewModel @Inject constructor(
     fun updateReminder(reminder: Reminder) {
         viewModelScope.launch {
             updateReminderUseCase(reminder).onFailure { e ->
+                _uiState.update { it.copy(errorMessage = e.message) }
+            }
+        }
+    }
+
+    fun togglePinReminder(reminderId: Long) {
+        viewModelScope.launch {
+            val reminder = uiState.value.reminders.find { it.id == reminderId } ?: return@launch
+            val updatedReminder = Reminder(
+                id = reminder.id,
+                fieldId = reminder.fieldId,
+                title = reminder.title,
+                content = reminder.content,
+                usageCount = reminder.usageCount,
+                notificationEnabled = reminder.notificationEnabled,
+                notificationIntervalMinutes = reminder.notificationIntervalMinutes,
+                color = reminder.color,
+                updatedAt = reminder.updatedAt,
+                isPinned = !reminder.isPinned
+            )
+            updateReminderUseCase(updatedReminder).onFailure { e ->
                 _uiState.update { it.copy(errorMessage = e.message) }
             }
         }

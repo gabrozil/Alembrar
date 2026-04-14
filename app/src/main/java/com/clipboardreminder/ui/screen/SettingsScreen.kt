@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.clipboardreminder.domain.model.ThemeMode
 import com.clipboardreminder.ui.viewmodel.SettingsViewModel
@@ -84,6 +86,35 @@ fun SettingsScreen(
                 }
             )
 
+            val bubbleEnabled by viewModel.floatingBubbleEnabled.collectAsState()
+            val context = LocalContext.current
+
+            ListItem(
+                headlineContent = { Text("Bolha Flutuante") },
+                supportingContent = { Text("Exibe uma bolha sobre outros apps com seus lembretes fixados.") },
+                trailingContent = {
+                    Switch(
+                        checked = bubbleEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                if (viewModel.checkOverlayPermission()) {
+                                    viewModel.updateFloatingBubble(true)
+                                } else {
+                                    // Open system settings for overlay permission
+                                    val intent = Intent(
+                                        android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        android.net.Uri.parse("package:${context.packageName}")
+                                    )
+                                    context.startActivity(intent)
+                                }
+                            } else {
+                                viewModel.updateFloatingBubble(false)
+                            }
+                        }
+                    )
+                }
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
             Text(
@@ -111,15 +142,37 @@ fun SettingsScreen(
             // Handle Update States
             when (val state = updateState) {
                 is com.clipboardreminder.domain.UpdateState.Checking -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        Text(
+                            text = "Buscando atualizações no GitHub...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        )
+                    }
                 }
                 is com.clipboardreminder.domain.UpdateState.UpdateAvailable -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.resetUpdateState() },
-                        title = { Text("Atualização Disponível") },
-                        text = { Text("Uma nova versão (${state.info.versionName}) está disponível. Deseja baixar?") },
+                        title = { Text("🎉 Atualização Disponível") },
+                        text = { 
+                            Column {
+                                Text("A versão ${state.info.versionName} está pronta para você.")
+                                if (!state.info.releaseNotes.isNullOrBlank()) {
+                                    Text(
+                                        text = "\nNovidades:\n${state.info.releaseNotes}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        },
                         confirmButton = {
-                            TextButton(onClick = { viewModel.downloadAndInstall(state.info) }) {
+                            Button(onClick = { viewModel.downloadAndInstall(state.info) }) {
                                 Text("Baixar e Instalar")
                             }
                         },
@@ -131,8 +184,8 @@ fun SettingsScreen(
                     )
                 }
                 is com.clipboardreminder.domain.UpdateState.Downloading -> {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Baixando atualização: ${(state.progress * 100).toInt()}%")
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(top = 8.dp)) {
+                        Text("Baixando: ${(state.progress * 100).toInt()}%")
                         LinearProgressIndicator(
                             progress = { state.progress },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -140,12 +193,17 @@ fun SettingsScreen(
                     }
                 }
                 is com.clipboardreminder.domain.UpdateState.Error -> {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                         modifier = Modifier.padding(top = 8.dp)
-                    )
+                    ) {
+                        Text(
+                            text = "⚠️ ${state.message}",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
                 }
                 is com.clipboardreminder.domain.UpdateState.NoUpdateAvailable -> {
                     Text(

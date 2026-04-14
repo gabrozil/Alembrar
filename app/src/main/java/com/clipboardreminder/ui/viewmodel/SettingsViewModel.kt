@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.clipboardreminder.notification.PersistentNotificationService
+import com.clipboardreminder.notification.FloatingBubbleService
+import android.provider.Settings
 import com.clipboardreminder.domain.UpdateManager
 import com.clipboardreminder.domain.UpdateState
 import com.clipboardreminder.domain.model.ThemeMode
@@ -39,6 +41,15 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false
         )
+    
+    val floatingBubbleEnabled: StateFlow<Boolean> = appPreferencesRepository
+        .getPreferences()
+        .map { it.floatingBubbleEnabled }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
 
     val updateState: StateFlow<UpdateState> = updateManager.updateState
 
@@ -62,6 +73,28 @@ class SettingsViewModel @Inject constructor(
                 context.stopService(intent)
             }
         }
+    }
+
+    fun updateFloatingBubble(enabled: Boolean) {
+        viewModelScope.launch {
+            if (enabled && !Settings.canDrawOverlays(context)) {
+                // We shouldn't enable it if we don't have permission
+                // But we'll let the UI handle the permission request
+                return@launch
+            }
+            
+            appPreferencesRepository.updateFloatingBubble(enabled)
+            val intent = Intent(context, FloatingBubbleService::class.java)
+            if (enabled) {
+                context.startService(intent)
+            } else {
+                context.stopService(intent)
+            }
+        }
+    }
+
+    fun checkOverlayPermission(): Boolean {
+        return Settings.canDrawOverlays(context)
     }
 
     fun checkForUpdates() {

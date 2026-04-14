@@ -8,4 +8,5 @@ interface AppPreferencesRepository {
     fun getPreferences(): Flow<AppPreferences>
     suspend fun updateThemeMode(themeMode: ThemeMode)
     suspend fun updatePersistentNotification(enabled: Boolean)
+    suspend fun updateFloatingBubble(enabled: Boolean)
 }

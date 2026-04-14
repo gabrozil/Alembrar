@@ -6,5 +6,6 @@ data class FieldUi(
     val id: Long,
     val name: String,
     val isPinned: Boolean,
+    val color: Int? = null,
     val isMostUsed: Boolean = false
 )

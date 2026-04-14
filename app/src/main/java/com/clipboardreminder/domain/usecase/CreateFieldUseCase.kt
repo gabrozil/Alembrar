@@ -9,11 +9,11 @@ import javax.inject.Singleton
 
 @Singleton
 class CreateFieldUseCase @Inject constructor(private val fieldRepository: FieldRepository) {
-    suspend operator fun invoke(name: String): Result<Field> {
+    suspend operator fun invoke(name: String, color: Int? = null): Result<Field> {
         val validation = validateField(name)
         if (validation is ValidationResult.Invalid) {
             return Result.failure(IllegalArgumentException(validation.reason))
         }
-        return runCatching { fieldRepository.createField(name.trim()) }
+        return runCatching { fieldRepository.createField(name.trim(), color) }
     }
 }

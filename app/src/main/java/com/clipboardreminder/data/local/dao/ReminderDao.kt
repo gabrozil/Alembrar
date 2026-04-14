@@ -18,6 +18,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY usageCount DESC LIMIT :limit")
     fun getMostUsed(limit: Int): Flow<List<ReminderEntity>>
 
+    @Query("SELECT * FROM reminders WHERE isPinned = 1 ORDER BY title ASC")
+    fun getPinned(): Flow<List<ReminderEntity>>
+
     @Query("""
         SELECT * FROM reminders
         WHERE title LIKE '%' || :query || '%'

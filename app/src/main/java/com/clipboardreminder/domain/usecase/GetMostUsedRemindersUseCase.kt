@@ -21,7 +21,9 @@ class GetMostUsedRemindersUseCase @Inject constructor(
                     content = reminder.content,
                     usageCount = reminder.usageCount,
                     notificationEnabled = reminder.notificationEnabled,
-                    notificationIntervalMinutes = reminder.notificationIntervalMinutes
+                    notificationIntervalMinutes = reminder.notificationIntervalMinutes,
+                    color = reminder.color,
+                    updatedAt = reminder.updatedAt
                 )
             }
         }

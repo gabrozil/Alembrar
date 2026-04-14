@@ -7,5 +7,8 @@ data class ReminderUi(
     val content: String,
     val usageCount: Int,
     val notificationEnabled: Boolean,
-    val notificationIntervalMinutes: Int?
+    val notificationIntervalMinutes: Int?,
+    val color: Int? = null,
+    val updatedAt: Long = 0L,
+    val isPinned: Boolean = false
 )

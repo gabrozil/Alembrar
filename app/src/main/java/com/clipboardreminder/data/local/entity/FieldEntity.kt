@@ -8,5 +8,6 @@ data class FieldEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val isPinned: Boolean = false,
+    val color: Int? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

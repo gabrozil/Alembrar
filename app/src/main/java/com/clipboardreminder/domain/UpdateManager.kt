@@ -15,8 +15,12 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.util.cio.*
 import io.ktor.utils.io.*
+import android.util.Log
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -45,30 +49,54 @@ class UpdateManager @Inject constructor(
     suspend fun checkForUpdates() {
         _updateState.value = UpdateState.Checking
         try {
+            Log.d("UpdateManager", "Iniciando verificação em: $UPDATE_JSON_URL")
             val response: UpdateInfo = httpClient.get(UPDATE_JSON_URL).body()
             val currentVersionCode = BuildConfig.VERSION_CODE
+            Log.d("UpdateManager", "Versão atual: $currentVersionCode, Versão GitHub: ${response.versionCode}")
 
             if (response.versionCode > currentVersionCode) {
                 _updateState.value = UpdateState.UpdateAvailable(response)
             } else {
                 _updateState.value = UpdateState.NoUpdateAvailable
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "O app já está na versão mais recente.", Toast.LENGTH_SHORT).show()
+                }
             }
         } catch (e: Exception) {
-            _updateState.value = UpdateState.Error("Falha ao buscar atualizações: ${e.message}")
+            val errorMsg = "Falha ao buscar atualizações: ${e.message}"
+            Log.e("UpdateManager", errorMsg, e)
+            _updateState.value = UpdateState.Error(errorMsg)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+            }
         }
     }
 
     suspend fun downloadAndInstall(info: UpdateInfo) {
         _updateState.value = UpdateState.Downloading(0f)
         try {
+            Log.d("UpdateManager", "Iniciando download de: ${info.downloadUrl}")
+            val response = httpClient.get(info.downloadUrl)
+            
+            if (!response.status.isSuccess()) {
+                val errorMsg = "Arquivo não encontrado no GitHub (Erro ${response.status.value}). Verifique se o Release foi criado."
+                Log.e("UpdateManager", errorMsg)
+                _updateState.value = UpdateState.Error(errorMsg)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+
             val file = File(context.externalCacheDir, "update.apk")
             if (file.exists()) file.delete()
 
             var bytesRead = 0L
-            val response = httpClient.get(info.downloadUrl)
             val contentLength = response.headers[HttpHeaders.ContentLength]?.toLong() ?: 0L
             val channel = response.bodyAsChannel()
             
+            Log.d("UpdateManager", "Tamanho do arquivo: $contentLength bytes")
+
             val fileChannel = file.writeChannel()
             try {
                 val buffer = ByteArray(8192)
@@ -87,10 +115,19 @@ class UpdateManager @Inject constructor(
                 fileChannel.close()
             }
 
+            if (file.length() < 1000) { // APKs não costumam ter menos de 1KB, provavelmente é um erro
+                throw Exception("Arquivo baixado parece inválido ou corrompido.")
+            }
+
             _updateState.value = UpdateState.ReadyToInstall(file)
             installApk(file)
         } catch (e: Exception) {
-            _updateState.value = UpdateState.Error("Falha no download: ${e.message}")
+            val errorMsg = "Falha no download: ${e.message}"
+            Log.e("UpdateManager", errorMsg, e)
+            _updateState.value = UpdateState.Error(errorMsg)
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+            }
         }
     }
 

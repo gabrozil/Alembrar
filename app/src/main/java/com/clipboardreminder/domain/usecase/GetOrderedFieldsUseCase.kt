@@ -18,14 +18,16 @@ class GetOrderedFieldsUseCase @Inject constructor(
                 id = MOST_USED_FIELD_ID,
                 name = "Mais Usados",
                 isPinned = false,
-                isMostUsed = true
+                isMostUsed = true,
+                color = null
             )
             val fieldUis = fields.map { field ->
                 FieldUi(
                     id = field.id,
                     name = field.name,
                     isPinned = field.isPinned,
-                    isMostUsed = false
+                    isMostUsed = false,
+                    color = field.color
                 )
             }
             listOf(mostUsed) + fieldUis

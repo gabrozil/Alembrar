@@ -9,14 +9,14 @@ plugins {
 
 android {
     namespace = "com.clipboardreminder"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.clipboardreminder"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 3
-        versionName = "1.2"
+        targetSdk = 35
+        versionCode = 5
+        versionName = "2.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.service)
 
     // Hilt
     implementation(libs.hilt.android)

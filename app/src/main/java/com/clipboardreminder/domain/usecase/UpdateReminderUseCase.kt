@@ -16,7 +16,11 @@ class UpdateReminderUseCase @Inject constructor(private val reminderRepository: 
         }
         return runCatching {
             reminderRepository.updateReminder(
-                reminder.copy(title = reminder.title.trim(), content = reminder.content.trim())
+                reminder.copy(
+                    title = reminder.title.trim(),
+                    content = reminder.content.trim(),
+                    updatedAt = System.currentTimeMillis() // Always update the timestamp on modification
+                )
             )
         }
     }

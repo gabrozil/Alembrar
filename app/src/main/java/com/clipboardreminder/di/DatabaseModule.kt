@@ -24,7 +24,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "clipboard_reminder.db"
         )
-            .fallbackToDestructiveMigration()
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
 
     @Provides

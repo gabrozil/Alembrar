@@ -23,5 +23,8 @@ data class ReminderEntity(
     val usageCount: Int = 0,
     val notificationEnabled: Boolean = false,
     val notificationIntervalMinutes: Int? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val color: Int? = null,
+    val updatedAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val isPinned: Boolean = false
 )

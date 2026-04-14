@@ -10,7 +10,10 @@ fun ReminderEntity.toDomain() = Reminder(
     content = content,
     usageCount = usageCount,
     notificationEnabled = notificationEnabled,
-    notificationIntervalMinutes = notificationIntervalMinutes
+    notificationIntervalMinutes = notificationIntervalMinutes,
+    color = color,
+    updatedAt = updatedAt,
+    isPinned = isPinned
 )
 
 fun Reminder.toEntity() = ReminderEntity(
@@ -20,5 +23,8 @@ fun Reminder.toEntity() = ReminderEntity(
     content = content,
     usageCount = usageCount,
     notificationEnabled = notificationEnabled,
-    notificationIntervalMinutes = notificationIntervalMinutes
+    notificationIntervalMinutes = notificationIntervalMinutes,
+    color = color,
+    updatedAt = updatedAt,
+    isPinned = isPinned
 )

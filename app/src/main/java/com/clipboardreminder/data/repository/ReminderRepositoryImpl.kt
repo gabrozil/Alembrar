@@ -46,4 +46,7 @@ class ReminderRepositoryImpl @Inject constructor(
 
     override suspend fun getRemindersWithNotification(): List<Reminder> =
         reminderDao.getRemindersWithNotification().map { it.toDomain() }
+
+    override fun getPinnedReminders(): Flow<List<Reminder>> =
+        reminderDao.getPinned().map { entities -> entities.map { it.toDomain() } }
 }

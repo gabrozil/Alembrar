@@ -20,6 +20,7 @@ class AppPreferencesRepositoryImpl @Inject constructor(
 
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val persistentNotificationKey = booleanPreferencesKey("persistent_notification")
+    private val floatingBubbleKey = booleanPreferencesKey("floating_bubble")
 
     override fun getPreferences(): Flow<AppPreferences> =
         dataStore.data.map { prefs ->
@@ -27,9 +28,11 @@ class AppPreferencesRepositoryImpl @Inject constructor(
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
                 ?: ThemeMode.SYSTEM
             val persistentNotificationEnabled = prefs[persistentNotificationKey] ?: false
+            val floatingBubbleEnabled = prefs[floatingBubbleKey] ?: false
             AppPreferences(
                 themeMode = themeMode,
-                persistentNotificationEnabled = persistentNotificationEnabled
+                persistentNotificationEnabled = persistentNotificationEnabled,
+                floatingBubbleEnabled = floatingBubbleEnabled
             )
         }
 
@@ -42,6 +45,12 @@ class AppPreferencesRepositoryImpl @Inject constructor(
     override suspend fun updatePersistentNotification(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[persistentNotificationKey] = enabled
+        }
+    }
+
+    override suspend fun updateFloatingBubble(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[floatingBubbleKey] = enabled
         }
     }
 }

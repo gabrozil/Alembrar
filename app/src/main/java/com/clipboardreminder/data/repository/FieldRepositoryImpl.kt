@@ -20,8 +20,8 @@ class FieldRepositoryImpl @Inject constructor(
     override fun getOrderedFields(): Flow<List<Field>> =
         fieldDao.getOrderedFields().map { entities -> entities.map { it.toDomain() } }
 
-    override suspend fun createField(name: String): Field {
-        val entity = FieldEntity(name = name)
+    override suspend fun createField(name: String, color: Int?): Field {
+        val entity = FieldEntity(name = name, color = color)
         val id = fieldDao.insert(entity)
         return entity.copy(id = id).toDomain()
     }
